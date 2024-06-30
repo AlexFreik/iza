@@ -98,7 +98,7 @@ function renderLoginPage(email, loginError) {
         <div class="card card-compact bg-base-100 m-10 max-w-96 shadow-xl">
           <figure>
             <img
-              src="./ieo-cover.jpg"
+              src="${IECO_COVER_IMG}"
               alt="IEO Cover" />
           </figure>
           <div class="card-body">
@@ -179,4 +179,12 @@ function renderPage() {
 }
 
 // ===== Code Execution =====
+let base = './';
+
+if (location.hostname !== 'localhost') {
+    base = 'https://alexfreik.github.io/iza/src';
+}
+
+const IECO_COVER_IMG = base + 'ieo-cover.jpg';
+
 renderPage();
