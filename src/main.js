@@ -182,7 +182,7 @@ function renderPage() {
 let base = './';
 
 if (location.hostname !== 'localhost') {
-    base = 'https://alexfreik.github.io/iza/src';
+    base = 'https://alexfreik.github.io/iza/src/';
 }
 
 const IECO_COVER_IMG = base + 'ieo-cover.jpg';
