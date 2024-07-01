@@ -3173,6 +3173,10 @@ html {
   margin-top: 0.5rem;
 }
 
+.-mt-10 {
+  margin-top: -2.5rem;
+}
+
 .flex {
   display: flex;
 }

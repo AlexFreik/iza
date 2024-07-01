@@ -272,7 +272,7 @@ function renderBatchSelectionPage(user, sessions, error) {
       <li><button onclick="signOutClick();" class="btn btn-outline btn-accent btn-sm">Sign Out</button></li>`);
 
     setRoot(`
-      <div class="m-fit m-auto max-w-96">
+      <div class="m-fit m-auto max-w-96 prose">
         <div class="m-10">
           <p class="text-xl font-bold mt-5">Languague:</p>
 
@@ -308,42 +308,34 @@ function renderBatchSelectionPage(user, sessions, error) {
             able to change the batch later.
           </p>
         </div>
+      </div>
 
-        <div class="overflow-x-auto max-w-96">
-          <table class="table">
-            <!-- head -->
-            <thead>
-              <tr>
-                <th></th>
-                <th>Name</th>
-                <th>Job</th>
-                <th>Favorite Color</th>
-              </tr>
-            </thead>
-            <tbody>
-              <!-- row 1 -->
-              <tr class="bg-base-200">
-                <th>1</th>
-                <td>Cy Ganderton</td>
-                <td>Quality Control Specialist</td>
-                <td>Blue</td>
-              </tr>
-              <!-- row 2 -->
-              <tr>
-                <th>2</th>
-                <td>Hart Hagerty</td>
-                <td>Desktop Support Technician</td>
-                <td>Purple</td>
-              </tr>
-              <!-- row 3 -->
-              <tr>
-                <th>3</th>
-                <td>Brice Swyre</td>
-                <td>Tax Accountant</td>
-                <td>Red</td>
-              </tr>
-            </tbody>
-          </table>
+      <div class="max-w-96 prose">
+          <p class="text-xl text-center">Sessions</p>
+          <div class="overflow-x-auto -mt-10">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Date</th>
+                  <th>Batch</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${sessions
+                    .filter((s) => s.lang === user.lang)
+                    .map(
+                        (s) => `
+                  <tr class="bg-base-200">
+                    <th>${s.name}</th>
+                    <th>${toISTString(s.start).slice(0, 6)}</th>
+                    <td>${s.batch} ${toISTString(s.start).slice(8)}</td>
+                  </tr>`,
+                    )
+                    .join('')}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>`);
 }
