@@ -318,6 +318,21 @@ function getSessionHtml(user, session) {
         now.month !== sessionStart.month ||
         now.day !== sessionStart.day;
 
+    let isOptional = false;
+    if (user.progress === 'Course Completed') {
+        isOptional = true;
+    } else if (user.progress.slice(0, 5) === 'Step ' && session.name.slice(0, 5) === 'Step ') {
+        userStep = Number(user.progress.slice(5, 6));
+        sessionStep = Number(session.name.slice(5, 6));
+
+        console.assert(1 <= userStep && userStep <= 6);
+        console.assert(1 <= sessionStep && sessionStep <= 6);
+
+        if (sessionStep <= userStep) {
+            isOptional = true;
+        }
+    }
+
     return `
         <div class="bg-neutral-content shadow-md text-center rounded-box my-5 p-3">
             <div class="font-semibold">${session.name} (${session.lang})</div>
@@ -329,9 +344,9 @@ function getSessionHtml(user, session) {
             <div>
                 <a
                     ${isDisabled ? 'disabled="disabled"' : ''}
-                    class="btn btn-accent font-bold text-white mt-3 btn-sm"
+                    class="btn btn-accent font-bold text-white mt-3 btn-sm w-32"
                     href="#">
-                    Join
+                    Join ${isOptional ? '(Optional)' : ''}
                 </a>
             </div>
         </div>
@@ -350,6 +365,15 @@ function renderSessionsPage(user, sessions, error) {
         <div class="m-fit m-auto max-w-96 prose">
             <div class="m-10">
                 <p class="text-xl font-bold">Sessions</p>
+                <p>
+                    Namaskaram! Namaskaram! Please be aware that the <b>orientation
+                    session is mandatory</b> for everyone to ensure a smooth experience.
+                </p>
+                <p>
+                    If you've already completed some steps, <b>you can skip those sessions</b>.
+                    Of course you can watch them again if you want, it will be good
+                </p>
+                <p>Your current progress is: <b>"${user.progress}"</b>.</p>
                 <p><strong>Note:</strong> Buttons become active on the day of the session.</p>
                 ${userSessions.map((s) => getSessionHtml(user, s)).join('')}
             </div>
