@@ -392,7 +392,6 @@ function getSessionHtml(user, session) {
 }
 
 function renderSessionsPage(user, sessions, error) {
-    console.log(JSON.stringify(user), sessions, error);
     setNavbarRight(`
         <li class="w-36 text-center m-auto">${user.name}</li>
         <li><button onclick="signOutClick();" class="btn btn-outline btn-accent btn-sm">Sign Out</button></li>`);
