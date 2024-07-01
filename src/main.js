@@ -35,13 +35,33 @@ function combineDateAndTime(date, time) {
 }
 
 function toISTString(date) {
-    return new Date(date).toLocaleString('en-US', {
+    return date.toLocaleString('en-US', {
         month: 'short',
         day: '2-digit',
         hour: '2-digit',
         minute: '2-digit',
         timeZone: 'Asia/Kolkata',
     });
+}
+
+function toIST(date) {
+    const year = date.toLocaleString('en-US', { year: 'numeric', timeZone: 'Asia/Kolkata' });
+    const month = date.toLocaleString('en-US', { month: 'numeric', timeZone: 'Asia/Kolkata' });
+    const day = date.toLocaleString('en-US', { day: 'numeric', timeZone: 'Asia/Kolkata' });
+    const hour = date.toLocaleString('en-US', {
+        hour12: false,
+        hour: 'numeric',
+        timeZone: 'Asia/Kolkata',
+    });
+    const minute = date.toLocaleString('en-US', { minute: 'numeric', timeZone: 'Asia/Kolkata' });
+
+    return {
+        year: Number(year),
+        month: Number(month),
+        day: Number(day),
+        hour: Number(hour),
+        minute: Number(minute),
+    };
 }
 
 function setLoginError(msg) {
@@ -128,6 +148,7 @@ function fetchSessions(f) {
             }
 
             const sessions = res.sessions
+                .slice(1)
                 .map((row) => new Session(row))
                 .sort((a, b) => a.start.getTime() - b.start.getTime());
             return f(sessions, null);
@@ -290,20 +311,28 @@ function renderBatchSelectionPage(user, sessions, error) {
 }
 
 function getSessionHtml(user, session) {
+    const now = toIST(new Date());
+    const sessionStart = toIST(session.start);
+    const isDisabled =
+        now.year !== sessionStart.year ||
+        now.month !== sessionStart.month ||
+        now.day !== sessionStart.day;
+
     return `
-        <div class="bg-neutral-content shadow-lg text-center rounded-box my-5 p-3">
+        <div class="bg-neutral-content shadow-md text-center rounded-box my-5 p-3">
             <div class="font-semibold">${session.name} (${session.lang})</div>
 
             <div>
-                Starts ${toISTString(session.start)}
+                Starts ${toISTString(session.start)} IST
             </div>
 
             <div>
-                <button
-                    class="btn btn-accent font-bold text-white mt-3"
-                    onclick="submitBatchClick();">
+                <a
+                    ${isDisabled ? 'disabled="disabled"' : ''}
+                    class="btn btn-accent font-bold text-white mt-3 btn-sm"
+                    href="#">
                     Join
-                </button>
+                </a>
             </div>
         </div>
     `;
@@ -317,9 +346,11 @@ function renderSessionsPage(user, sessions, error) {
     const userSessions = sessions.filter((s) => s.lang === user.lang && s.batch === user.batch);
 
     setRoot(`
-        <div class="m-fit m-auto max-w-96">
+        <div class="text-error">${error ? error : ''}</div>
+        <div class="m-fit m-auto max-w-96 prose">
             <div class="m-10">
                 <p class="text-xl font-bold">Sessions</p>
+                <p><strong>Note:</strong> Buttons become active on the day of the session.</p>
                 ${userSessions.map((s) => getSessionHtml(user, s)).join('')}
             </div>
         </div>
