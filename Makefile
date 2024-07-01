@@ -1,7 +1,7 @@
 .PHONY: *
 
 all:
-	make start
+	make dev
 
 install:
 	npm install

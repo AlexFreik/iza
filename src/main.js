@@ -6,9 +6,9 @@ class User {
         this.email = data[0];
         this.name = data[1];
         this.lang = data[2];
-        this.progress = data[3];
-        this.time = data[4];
-        this.zoomLink = data[5];
+        this.batch = data[3];
+        this.zoomLink = data[4];
+        this.progress = data[5];
         this.attendance = data.slice(6, 18);
     }
 }
@@ -29,19 +29,6 @@ function setNavbarRight(htmlStr) {
     elem.innerHTML = htmlStr;
 }
 
-// ===== Actions =====
-function logInClick() {
-    const email = document.getElementById('email-input').value.toLowerCase().trim();
-    localStorage.setItem('email', email);
-
-    fetchUserAndRerender(email);
-}
-
-function signOutClick() {
-    localStorage.setItem('email', '');
-    renderLoginPage('', '');
-}
-
 function fetchUserAndRerender(email) {
     renderLoadingPage();
 
@@ -54,25 +41,89 @@ function fetchUserAndRerender(email) {
             try {
                 res = JSON.parse(resStr);
             } catch (e) {
-                renderLoginPage(email, "[Internal Error] Couldn't parse response: " + e.toString());
-            }
-
-            if (res.error === 'NOT_FOUND') {
                 return renderLoginPage(
                     email,
-                    `Error: there are no registrations for this email.
-      Please check the spelling or use a different email 🙏`,
+                    "[Internal Error] Couldn't parse response: " + e.toString(),
+                );
+            }
+
+            if (res.error === 'USER_NOT_FOUND') {
+                return renderLoginPage(
+                    email,
+                    `[Error] There are no registrations for this email.
+                      Please check the spelling or use a different email 🙏`,
                 );
             } else if (res.error) {
-                return renderLoginPage(email, res.error);
+                return renderLoginPage(email, '[Error]: ' + res.error);
             }
             const user = new User(res.row, res.data);
-            if (user.time === '') {
-                return renderTimeSelectionPage(user);
+            currentUser = user;
+            if (user.batch === '') {
+                return renderBatchSelectionPage(user, '');
             }
             return renderUserPage(user);
         })
         .getUserByEmail(email);
+}
+
+function setUserBatchAndRerender(user, batch) {
+    google.script.run
+        .withFailureHandler((e) => {
+            renderBatchSelectionPage(
+                user,
+                "[Internal Error] Couldn't select time batch: " + e.toString(),
+            );
+        })
+        .withSuccessHandler((resStr) => {
+            let res = {};
+            try {
+                res = JSON.parse(resStr);
+            } catch (e) {
+                return renderBatchSelectionPage(
+                    user,
+                    "[Internal Error] Couldn't parse response: " + e.toString(),
+                );
+            }
+
+            if (res.error === 'BATCH_NOT_FOUND') {
+                return renderBatchSelectionPage(
+                    user,
+                    `[Client Error] Batch ${batch} doesn't exist 🙏`,
+                );
+            }
+            if (res.error) {
+                return renderBatchSelectionPage(user, '[Error] ' + res.error);
+            }
+            console.log(user);
+            return renderUserPage(user);
+        })
+        .setUserBatch(user.row, batch);
+}
+
+// ===== Actions =====
+function logInClick() {
+    const email = document.getElementById('email-input').value.toLowerCase().trim();
+    if (email === '') {
+        return renderLoginPage('', '[Error] Please enter valid email 🙏');
+    }
+    localStorage.setItem('email', email);
+    fetchUserAndRerender(email);
+}
+
+function signOutClick() {
+    localStorage.setItem('email', '');
+    currentUser = null;
+    renderLoginPage('', '');
+}
+
+function submitBatchClick() {
+    const radio = document.querySelector('input[name="batch-radio"]:checked');
+    if (radio === null) {
+        return renderBatchSelectionPage(currentUser, '[Error] Please select the batch 🙏');
+    }
+    const batch = radio.value;
+    console.assert(batch === 'Morning' || batch === 'Evening');
+    setUserBatchAndRerender(currentUser, batch);
 }
 
 // ===== Page Rendering =====
@@ -129,44 +180,58 @@ function renderLoginPage(email, loginError) {
       </div>`);
 }
 
-function renderTimeSelectionPage(user) {
+function renderBatchSelectionPage(user, error) {
     setNavbarRight(`
       <li class="w-36 text-center m-auto">${user.name}</li>
-      <li><button onclick="signOutClick();" class="btn btn-outline btn-accent btn-sm">Sign Out</button></li>
-    `);
+      <li><button onclick="signOutClick();" class="btn btn-outline btn-accent btn-sm">Sign Out</button></li>`);
 
     setRoot(`
       <div class="m-fit m-auto max-w-96">
-        <div class="m-10 text-center">
-          <p>Please select the batch time:</p>
-          <button class="btn btn-accent mt-5">Morning 6:00 AM</button>
-          <button class="btn btn-accent mt-5">Evening 6:00 PM</button>
-          <p class="mt-5 text-left"><strong>Note:</strong> By selecting the batch time,
-          you are committing to attend all sessions at the selected time. You won't be
-          able to change the batch later.
+        <div class="m-10">
+          <p class="text-xl font-bold mt-5">Languague:</p>
+
+          <div class="mt-2">
+            <label class="cursor-pointer">
+              <input type="radio" name="lang-radio" class="radio radio-accent align-middle" checked="checked"/>
+              <span class="align-middle m-1">${user.lang}</span>
+            </label>
+          </div>
+
+          <p class="text-xl font-bold mt-5">Please select the batch time:</p>
+
+          <div class="mt-2">
+            <label class="cursor-pointer">
+              <input type="radio" name="batch-radio" class="radio radio-accent align-middle" value="Morning" />
+              <span class="align-middle m-1">Morning 6:00 AM</span>
+            </label>
+          </div>
+
+          <div class="mt-2">
+            <label class="cursor-pointer">
+              <input type="radio" name="batch-radio" class="radio radio-accent align-middle" value="Evening" />
+              <span class="align-middle m-1">Evening 6:00 PM</span>
+            </label>
+          </div>
+
+          <button class="btn btn-accent font-bold text-neutral-content mt-5" onclick="submitBatchClick();">Submit</button>
+          <p class="text-error">${error}</p>
+
+          <p class="mt-5 text-left">
+            <strong>Note:</strong> By selecting the batch time,
+            you are committing to attend all sessions at the selected time. You won't be
+            able to change the batch later.
           </p>
         </div>
-      </div>
-
-      <dialog id="my_modal_1" class="modal">
-        <div class="modal-box">
-          <h3 class="text-lg font-bold">You selected <strong>Btach</strong> btach</h3>
-          <p class="py-4">Are you sure? You won't be able to change the batch later</p>
-          <div class="modal-action">
-            <form method="dialog">
-              <button class="btn">Confirm</button>
-              <button class="btn">Close</button>
-            </form>
-          </div>
-        </div>
-      </dialog>`);
+      </div>`);
 }
 
 function renderUserPage(user) {
     setNavbarRight(`
-    <li class="w-36 text-center m-auto">${user.name}</li>
-    <li><button onclick="signOutClick();" class="btn btn-outline btn-accent btn-sm">Sign Out</button></li>
-  `);
+        <li class="w-36 text-center m-auto">${user.name}</li>
+        <li><button onclick="signOutClick();" class="btn btn-outline btn-accent btn-sm">Sign Out</button></li>`);
+    setRoot(`
+
+        `);
 }
 
 function renderPage() {
@@ -187,4 +252,5 @@ if (location.hostname !== 'localhost') {
 
 const IECO_COVER_IMG = base + 'ieo-cover.jpg';
 
+let currentUser = null;
 renderPage();
