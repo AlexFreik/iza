@@ -375,7 +375,8 @@ function getSessionHtml(user, session) {
                 <a
                     ${isDisabled ? 'disabled="disabled"' : ''}
                     class="btn btn-accent font-bold text-white mt-3 btn-sm w-32"
-                    href="#">
+                    href="#"
+                    target="_blank">
                     Join ${isOptional ? '(Optional)' : ''}
                 </a>
             </div>
